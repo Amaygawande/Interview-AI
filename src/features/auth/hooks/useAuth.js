@@ -1,0 +1,65 @@
+import { useContext, useEffect } from "react";
+import { AuthContext } from "../auth.context";
+import { login, register, logout, getMe } from "../services/auth.api";
+
+export const useAuth = () => {
+    const context = useContext(AuthContext)
+    const { user, setUser, loading, setLoading } = context
+
+    const handleLogin = async ({ email, password }) => {
+        setLoading(true)
+        try {
+            const data = await login({ email, password })
+            setUser(data.user)
+            return true; // Tell the component login succeeded
+        } catch (err) {
+            // Alert the user if password/email is wrong!
+            alert(err.response?.data?.message || "Login failed");
+            return false;
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleRegister = async ({ username, email, password }) => {
+        setLoading(true)
+        try {
+            const data = await register({ username, email, password })
+            setUser(data.user)
+            return true;
+        } catch (err) {
+            alert(err.response?.data?.message || "Registration failed");
+            return false;
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleLogout = async () => {
+        setLoading(true)
+        try {
+            await logout()
+            setUser(null) // Clear the user state!
+        } catch (err) {
+            console.log("Logout error:", err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        const getAndSetUser = async () => {
+            try {
+                const data = await getMe()
+                setUser(data.user)
+            } catch (err) {
+                setUser(null) // If not logged in, ensure user is null
+            } finally {
+                setLoading(false)
+            }
+        }
+        getAndSetUser()
+    }, [])
+
+    return { user, loading, handleRegister, handleLogin, handleLogout }
+}
